@@ -1,0 +1,21 @@
+{
+    "name": "ixiaomu/yii2-payment",
+    "description": "YII2 支付组件（支付宝支付、微信支付）",
+    "type": "yii2-extension",
+    "keywords": ["yii2","extension"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "xiaomu",
+            "email": "ixiaomu@qq.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ixiaomu\\payment\\": ""
+        }
+    }
+}
