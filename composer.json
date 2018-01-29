@@ -4,6 +4,10 @@
     "type": "yii2-extension",
     "keywords": ["yii2","extension"],
     "license": "MIT",
+    "support": {
+        "issues": "https://github.com/ixiaomu/yii2-payment/issues",
+        "source": "https://github.com/ixiaomu/yii2-payment"
+    },
     "authors": [
         {
             "name": "xiaomu",
