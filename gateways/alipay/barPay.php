@@ -1,11 +1,12 @@
 <?php
 /**
- * barPay.php * Author: MYL <ixiaomu@qq.com>
- * Date: 2018/1/30 9:24
+ * barPay.php.
+ * Author: MYL <ixiaomu@qq.com>
+ * Date: 2018/1/30 17:53
  * Desctiption:
  */
+namespace ixiaomu\payment\gateways\alipay;
 
-namespace ixiaomu\payment\alipay;
 
 use ixiaomu\payment\gateways\Alipay;
 

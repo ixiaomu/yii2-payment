@@ -5,7 +5,6 @@
  * Date: 2018/1/29 17:50
  * Desctiption:
  */
-
 namespace ixiaomu\payment\gateways\wechat;
 use ixiaomu\payment\exceptions\PayException;
 use ixiaomu\payment\gateways\Wechat;
