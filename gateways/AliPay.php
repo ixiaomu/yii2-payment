@@ -1,6 +1,6 @@
 <?php
 /**
- * AliPay.php.
+ * Alipay.php.
  * Author: MYL <ixiaomu@qq.com>
  * Date: 2018/1/29 10:54
  * Desctiption:  支付宝
@@ -9,6 +9,7 @@
 namespace ixiaomu\payment\gateways;
 
 use ixiaomu\payment\exceptions\PayException;
+use ixiaomu\payment\libs\GatewayInterface;
 
 abstract class Alipay extends GatewayInterface
 {

@@ -11,7 +11,6 @@ use ixiaomu\payment\gateways\Alipay;
 
 class barPay extends Alipay
 {
-
     /**
      * 应用并返回数据
      * Author : MYL <ixiaomu@qq.com>
