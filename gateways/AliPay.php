@@ -8,37 +8,16 @@
 
 namespace ixiaomu\payment\gateways;
 
-use InvalidArgumentException;
-use Pay\Contracts\Config;
-use Pay\Contracts\GatewayInterface;
-use Pay\Contracts\HttpService;
-use Pay\Exceptions\GatewayException;
+use ixiaomu\payment\exceptions\PayException;
 
-/**
- * 支付宝抽象类
- * Class Alipay
- * @package Pay\Gateways\Alipay
- */
 abstract class Alipay extends GatewayInterface
 {
 
-    /**
-     * 支付宝全局参数
-     * @var array
-     */
     protected $config;
 
-    /**
-     * 用户定义配置
-     * @var Config
-     */
     protected $userConfig;
 
-    /**
-     * 支付宝网关地址
-     * @var string
-     */
-    protected $gateway = 'https://openapi.alipay.com/gateway.do?charset=utf-8';
+    protected $gateway = 'https://openapi.alipay.com/gateway.do?charset=utf-8'; //支付宝网关地址
 
     /**
      * Alipay constructor.
@@ -46,26 +25,19 @@ abstract class Alipay extends GatewayInterface
      */
     public function __construct(array $config)
     {
-        $this->userConfig = new Config($config);
-        if (is_null($this->userConfig->get('app_id'))) {
-            throw new InvalidArgumentException('Missing Config -- [app_id]');
-        }
-        if (!empty($config['cache_path'])) {
-            HttpService::$cachePath = $config['cache_path'];
-        }
-        // 沙箱模式
-        if (!empty($config['debug'])) {
-            $this->gateway = 'https://openapi.alipaydev.com/gateway.do';
+        $this->userConfig = $config;
+        if (is_null($this->userConfig['app_id'])) {
+            throw new PayException('Missing Config -- [app_id]');
         }
         $this->config = [
-            'app_id'      => $this->userConfig->get('app_id'),
+            'app_id'      => $this->userConfig['app_id'],
             'method'      => '',
             'format'      => 'JSON',
             'charset'     => 'utf-8',
             'sign_type'   => 'RSA2',
             'version'     => '1.0',
-            'return_url'  => $this->userConfig->get('return_url', ''),
-            'notify_url'  => $this->userConfig->get('notify_url', ''),
+            'return_url'  => $this->userConfig['return_url'],
+            'notify_url'  => $this->userConfig['notify_url'],
             'timestamp'   => date('Y-m-d H:i:s'),
             'sign'        => '',
             'biz_content' => '',
@@ -94,7 +66,7 @@ abstract class Alipay extends GatewayInterface
      * @param array|string $options 退款参数或退款商户订单号
      * @param null $refund_amount 退款金额
      * @return array|bool
-     * @throws GatewayException
+     * @throws PayException
      */
     public function refund($options, $refund_amount = null)
     {
@@ -106,9 +78,11 @@ abstract class Alipay extends GatewayInterface
 
     /**
      * 关闭支付宝进行中的订单
-     * @param array|string $options
+     * Author : MYL <ixiaomu@qq.com>
+     * Updater：
+     * @param $options
      * @return array|bool
-     * @throws GatewayException
+     * @throws PayException
      */
     public function close($options)
     {
@@ -120,9 +94,11 @@ abstract class Alipay extends GatewayInterface
 
     /**
      * 查询支付宝订单状态
+     * Author : MYL <ixiaomu@qq.com>
+     * Updater：
      * @param string $out_trade_no
      * @return array|bool
-     * @throws GatewayException
+     * @throws PayException
      */
     public function find($out_trade_no = '')
     {
@@ -132,10 +108,12 @@ abstract class Alipay extends GatewayInterface
 
     /**
      * 验证支付宝支付宝通知
-     * @param array $data 通知数据
-     * @param null $sign 数据签名
+     * Author : MYL <ixiaomu@qq.com>
+     * Updater：
+     * @param $data
+     * @param null $sign
      * @param bool $sync
-     * @return array|bool
+     * @return bool
      */
     public function verify($data, $sign = null, $sync = false)
     {
@@ -148,19 +126,10 @@ abstract class Alipay extends GatewayInterface
         return openssl_verify($toVerify, base64_decode($sign), $res, OPENSSL_ALGO_SHA256) === 1 ? $data : false;
     }
 
-    /**
-     * @return string
-     */
     abstract protected function getMethod();
 
-    /**
-     * @return string
-     */
     abstract protected function getProductCode();
 
-    /**
-     * @return string
-     */
     protected function buildPayHtml()
     {
         $html = "<form id='alipaysubmit' name='alipaysubmit' action='{$this->gateway}' method='post'>";
@@ -177,7 +146,7 @@ abstract class Alipay extends GatewayInterface
      * @param array $options
      * @param string $method
      * @return array|bool
-     * @throws GatewayException
+     * @throws PayException
      */
     protected function getResult($options, $method)
     {
@@ -187,7 +156,7 @@ abstract class Alipay extends GatewayInterface
         $method = str_replace('.', '_', $method) . '_response';
         $data = json_decode($this->post($this->gateway, $this->config), true);
         if (!isset($data[$method]['code']) || $data[$method]['code'] !== '10000') {
-            throw new GatewayException("GetResultError:{$data[$method]['msg']} - {$data[$method]['sub_code']}[{$data[$method]['sub_msg']}]", $data[$method]['code'], $data);
+            throw new PayException("AliPayError:{$data[$method]['msg']} - {$data[$method]['sub_code']}[{$data[$method]['sub_msg']}]");
         }
         return $this->verify($data[$method], $data['sign'], true);
     }
@@ -210,6 +179,8 @@ abstract class Alipay extends GatewayInterface
 
     /**
      * 数据签名处理
+     * Author : MYL <ixiaomu@qq.com>
+     * Updater：
      * @param array $toBeSigned
      * @param bool $verify
      * @return bool|string

@@ -5,7 +5,7 @@
  * Date: 2018/1/29 13:08
  * Desctiption:
  */
-namespace ixiaomu\payment\lib;
+namespace ixiaomu\payment\libs;
 
 abstract class GatewayInterface
 {
@@ -47,9 +47,11 @@ abstract class GatewayInterface
     abstract public function verify($data, $sign = null, $sync = false);
 
     /**
-     * 网络模拟请求
-     * @param string $url 网络请求URL
-     * @param array|string $data 请求数据
+     * 模拟POST请求
+     * Author : MYL <ixiaomu@qq.com>
+     * Updater：
+     * @param $url
+     * @param $data
      * @param array $options
      * @return bool|string
      */

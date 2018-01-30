@@ -1,11 +1,13 @@
 <?php
+/**
+ * 支付模块
+ */
 namespace ixiaomu\payment;
 
-
 use ixiaomu\payment\exceptions\PayException;
-use ixiaomu\payment\lib\Config;
+use ixiaomu\payment\libs\Config;
 
-class Pay extends \yii\base\Widget
+class Pay extends \yii\base\Component
 {
     private $config; //支付配置
 
@@ -15,16 +17,16 @@ class Pay extends \yii\base\Widget
 
     public function __construct(array $config = [])
     {
-        if (!empty($config)){
-            $this->config = $config;
+        if (empty($config)){
+            throw new PayException("Payment Config is not defined.");
         }
-        throw new PayException('请先设置支付配置！');
+        $this->config = $config;
     }
 
     public function driver($driver)
     {
-        if (is_null($this->config->get($driver))) {
-            throw new PayException("Driver [$driver]'s Config is not defined.");
+        if (is_null($driver)) {
+            throw new PayException("Driver [$driver] is not defined.");
         }
         $this->drivers = $driver;
         return $this;
@@ -50,11 +52,11 @@ class Pay extends \yii\base\Widget
      */
     protected function createGateway($gateway)
     {
-        if (!file_exists(__DIR__ . '/gateways/' . ucfirst($this->drivers) . '/' . ucfirst($gateway) . 'Pay.php')) {
+        if (!file_exists(__DIR__ . '/gateways/' . strtolower($this->drivers) . '/' . strtolower($gateway) . 'Pay.php')) {
             throw new PayException("Gateway [$gateway] is not supported.");
         }
-        $gateway = __NAMESPACE__ . '\\Gateways\\' . ucfirst($this->drivers) . '\\' . ucfirst($gateway) . 'Gateway';
-        return new $gateway($this->config->get($this->drivers));
+        $gateway = __NAMESPACE__ . '\\gateways\\' . strtolower($this->drivers) . '\\' . strtolower($gateway) . 'Pay';
+        return new $gateway($this->config);
     }
 
 
