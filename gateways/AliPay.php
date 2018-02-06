@@ -33,13 +33,14 @@ abstract class Alipay extends GatewayInterface
         $this->config = [
             'app_id'      => $this->userConfig['app_id'],
             'method'      => '',
-            'format'      => 'JSON',
+            'format'      => 'json',
             'charset'     => 'utf-8',
             'sign_type'   => 'RSA2',
             'version'     => '1.0',
             'return_url'  => $this->userConfig['return_url'],
             'notify_url'  => $this->userConfig['notify_url'],
             'timestamp'   => date('Y-m-d H:i:s'),
+            'app_auth_token' => $this->userConfig['app_auth_token'],
             'sign'        => '',
             'biz_content' => '',
         ];
@@ -94,6 +95,20 @@ abstract class Alipay extends GatewayInterface
     }
 
     /**
+     * 撤销订单操作
+     * @param array $options
+     * @return array
+     * @throws PayException
+     */
+    public function reverse($options)
+    {
+        if (!is_array($options)) {
+            $options = ['out_trade_no' => $options];
+        }
+        return $this->getResult($options, 'alipay.trade.cancel');
+    }
+
+    /**
      * 查询支付宝订单状态
      * Author : MYL <ixiaomu@qq.com>
      * Updater：
@@ -124,7 +139,31 @@ abstract class Alipay extends GatewayInterface
         $sign = is_null($sign) ? $data['sign'] : $sign;
         $res = "-----BEGIN PUBLIC KEY-----\n" . wordwrap($this->userConfig['public_key'], 64, "\n", true) . "\n-----END PUBLIC KEY-----";
         $toVerify = $sync ? json_encode($data) : $this->getSignContent($data, true);
-        return openssl_verify($toVerify, base64_decode($sign), $res, OPENSSL_ALGO_SHA256) === 1 ? $data : false;
+        $response = openssl_verify($toVerify, base64_decode($sign), $res, OPENSSL_ALGO_SHA256) === 1 ? $data : false;
+        if($response !== false){
+            if ((!empty($response)&&("10000" == $response['code']))) {
+                // 支付交易明确成功
+                $result['status'] = 'SUCCESS';
+                //查询订单操作
+                if(isset($response['trade_status']) && $response['trade_status'] == 'TRADE_SUCCESS'){
+                    $result['status'] = 'SUCCESS';
+                }
+                if((isset($response['trade_status']) && $response['trade_status'] == 'WAIT_BUYER_PAY')){
+                    $result['status'] = 'WAIT';
+                }
+                if((isset($response['trade_status']) && $response['trade_status'] == 'TRADE_CLOSED')){
+                    $result['status'] = 'FAILED';
+                }
+            } elseif ((!empty($response)&&("10003" == $response['code']))) {
+                // 返回用户处理中，则轮询查询交易是否成功
+                $result['status'] = 'WAIT';
+            }else {
+                // 其他情况表明该订单支付明确失败
+                $result['status'] = 'FAILED';
+            }
+            $result['body'] = $response;
+            return $result;
+        }
     }
 
     abstract protected function getMethod();
@@ -151,14 +190,11 @@ abstract class Alipay extends GatewayInterface
      */
     protected function getResult($options, $method)
     {
-        $this->config['biz_content'] = json_encode($options);
+        $this->config['biz_content'] = json_encode($options,JSON_UNESCAPED_UNICODE);
         $this->config['method'] = $method;
         $this->config['sign'] = $this->getSign();
         $method = str_replace('.', '_', $method) . '_response';
         $data = json_decode($this->post($this->gateway, $this->config), true);
-        if (!isset($data[$method]['code']) || $data[$method]['code'] !== '10000') {
-            throw new PayException("AliPayError:{$data[$method]['msg']} - {$data[$method]['sub_code']}[{$data[$method]['sub_msg']}]");
-        }
         return $this->verify($data[$method], $data['sign'], true);
     }
 

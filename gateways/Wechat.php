@@ -48,6 +48,10 @@ abstract class Wechat extends GatewayInterface
             'sign_type'  => 'MD5',
             'notify_url' => $this->userConfig['notify_url']
         ];
+        if (isset($this->userConfig['sub_mch_id'])){
+            $this->config['sub_appid'] = $this->userConfig['sub_appid'];
+            $this->config['sub_mch_id'] = $this->userConfig['sub_mch_id'];
+        }
     }
 
     /**
@@ -60,9 +64,9 @@ abstract class Wechat extends GatewayInterface
     public function refund($options = [])
     {
         $this->config = array_merge($this->config, $options);
-        $this->config['op_user_id'] = isset($this->config['op_user_id']) ?: $this->userConfig->get('mch_id', '');
+        $this->config['op_user_id'] = isset($this->config['op_user_id']) ?: $this->userConfig['mch_id'];
         $this->unsetTradeTypeAndNotifyUrl();
-        return $this->getResult($this->gateway_refund, true);
+        return $this->getResult($this->url_refund, true);
     }
 
     /**
@@ -143,7 +147,7 @@ abstract class Wechat extends GatewayInterface
     {
         $this->config['sign'] = $this->getSign($this->config);
         if ($cert) {
-            $data = $this->fromXml($this->post($url, $this->toXml($this->config), ['ssl_cer' => $this->userConfig->get('ssl_cer', ''), 'ssl_key' => $this->userConfig->get('ssl_key', '')]));
+            $data = $this->fromXml($post = $this->post($url, $this->toXml($this->config), ['ssl_cer' => $this->userConfig['sslcert_path'], 'ssl_key' => $this->userConfig['sslkey_path']]));
         } else {
             $data = $this->fromXml($this->post($url, $this->toXml($this->config)));
         }
@@ -168,7 +172,7 @@ abstract class Wechat extends GatewayInterface
     protected function getSign($data)
     {
         if (is_null($this->userConfig['mch_key'])) {
-            throw new InvalidArgumentException('Missing Config -- [mch_key]');
+            throw new PayException('Missing Config -- [mch_key]');
         }
         ksort($data);
         $string = md5($this->getSignContent($data) . '&key=' . $this->userConfig['mch_key']);

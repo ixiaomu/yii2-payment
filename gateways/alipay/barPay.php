@@ -7,7 +7,7 @@
  */
 namespace ixiaomu\payment\gateways\alipay;
 
-
+use ixiaomu\payment\exceptions\PayException;
 use ixiaomu\payment\gateways\Alipay;
 
 class barPay extends Alipay
@@ -20,7 +20,12 @@ class barPay extends Alipay
      */
     public function apply(array $options = [], $scene = 'bar_code'){
         $options['scene'] = $scene;
-        return $this->getResult($options, $this->getMethod());
+        $this->config['biz_content'] = json_encode($options,JSON_UNESCAPED_UNICODE);
+        $this->config['method'] = $this->getMethod();
+        $this->config['sign'] = $this->getSign();
+        $method = str_replace('.', '_', $this->config['method']) . '_response';
+        $data = json_decode($this->post($this->gateway, $this->config), true);
+        return $this->verify($data[$method], $data['sign'], true);
     }
 
     /**
